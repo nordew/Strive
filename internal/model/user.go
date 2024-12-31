@@ -7,13 +7,14 @@ import (
 )
 
 type User struct {
-	ID         string    `json:"id"`
-	TelegramID int64     `json:"telegram_id"`
-	FirstName  string    `json:"first_name"`
-	LastName   string    `json:"last_name"`
-	Role       int       `json:"role"`
-	CreatedAt  time.Time `json:"created_at"`
-	UpdatedAt  time.Time `json:"updated_at"`
+	ID           string    `json:"id"`
+	TelegramID   int64     `json:"telegram_id"`
+	FirstName    string    `json:"first_name"`
+	LastName     string    `json:"last_name"`
+	Role         int       `json:"role"`
+	IsAuthorized bool      `json:"is_authorized"`
+	CreatedAt    time.Time `json:"created_at"`
+	UpdatedAt    time.Time `json:"updated_at"`
 }
 
 // NewUser creates a new User instance with validation and safety checks
@@ -33,13 +34,13 @@ func NewUser(
 		return nil, errors.New("telegram_id must be a positive integer")
 	}
 
-	firstName = strings.TrimSpace(firstName)
-	if firstName == "" {
-		return nil, errors.New("first_name cannot be empty")
-	}
-
-	lastName = strings.TrimSpace(lastName)
-
+	//firstName = strings.TrimSpace(firstName)
+	//if firstName == "" {
+	//	return nil, errors.New("first_name cannot be empty")
+	//}
+	//
+	//lastName = strings.TrimSpace(lastName)
+	//
 	if role < 0 {
 		return nil, errors.New("role must be a positive integer")
 	}
@@ -118,6 +119,11 @@ func (u *User) SetUpdatedAt(updatedAt time.Time) (*User, error) {
 	}
 
 	u.UpdatedAt = updatedAt
+	return u, nil
+}
+
+func (u *User) SetIsAuthorized(isAuthorized bool) (*User, error) {
+	u.IsAuthorized = isAuthorized
 	return u, nil
 }
 

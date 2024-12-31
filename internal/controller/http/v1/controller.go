@@ -2,32 +2,41 @@ package v1
 
 import (
 	"fmt"
+	"log"
+
 	"github.com/gin-gonic/gin"
 	"github.com/nordew/Strive/internal/service"
-	"log"
 )
 
 type Controller struct {
 	userService service.UserService
+	router      *gin.Engine
 }
 
 func NewController(userService service.UserService) *Controller {
-	return &Controller{
+	controller := &Controller{
 		userService: userService,
+		router:      gin.New(),
+	}
+
+	controller.initRoutes()
+	return controller
+}
+
+func (c *Controller) Init() *gin.Engine {
+	return c.router
+}
+
+func (c *Controller) Run(httpPort int) {
+	if err := c.router.Run(":" + fmt.Sprint(httpPort)); err != nil {
+		log.Fatalf("failed to run HTTP server: %v", err)
 	}
 }
 
-func (c *Controller) InitAndRun(httpPort int) {
-	router := gin.New()
-
-	c.initAuthRoutes(router)
-
-	if err := router.Run(":" + fmt.Sprint(httpPort)); err != nil {
-		log.Fatalf("failed to run http server: %v", err)
-	}
+func (c *Controller) initRoutes() {
+	c.initAuthRoutes(c.router)
 }
 
 func handleErr(ctx *gin.Context, statusCode int, err error) {
 	ctx.JSON(statusCode, gin.H{"error": err.Error()})
-	return
 }

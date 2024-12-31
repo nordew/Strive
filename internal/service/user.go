@@ -3,10 +3,14 @@ package service
 import (
 	"context"
 	"errors"
+	"fmt"
+	"github.com/google/uuid"
+	"github.com/nordew/Strive/internal/dto"
 	"github.com/nordew/Strive/internal/model"
 	"github.com/nordew/Strive/internal/storage"
 	"github.com/nordew/Strive/pkg/auth"
 	"github.com/nordew/Strive/pkg/logger"
+	"time"
 )
 
 type userService struct {
@@ -34,35 +38,90 @@ func NewUserService(userStorage storage.UserStorage, auth auth.Authenticator, lo
 	}
 }
 
-func (s *userService) Login(ctx context.Context, telegramID int64) (*AuthResponse, error) {
+func (s *userService) Login(ctx context.Context, loginDTO *dto.LoginUserDTO) (*AuthResponse, error) {
 	const op = "userService.Login"
 
-	user, err := s.userStorage.GetByTelegramID(ctx, telegramID)
+	user, err := s.userStorage.GetByTelegramID(ctx, loginDTO.TelegramID)
 	if err != nil {
 		if errors.Is(err, storage.ErrorUserNotFound) {
-			user = &model.User{
-				TelegramID: telegramID,
+			now := time.Now()
+
+			user, err := model.NewUser(uuid.NewString(), loginDTO.TelegramID, "", "", 0, now, now)
+			if err != nil {
+				s.logger.Errorf("[%s] failed to create new user: %v", op, err)
+				return nil, fmt.Errorf("failed to create new user: %w", err)
 			}
+
 			if err := s.userStorage.Create(ctx, user); err != nil {
-				return nil, s.handleError(op, "failed to create user", err, telegramID)
+				s.logger.Errorf("[%s] failed to create new user: %v", op, err)
+				return nil, fmt.Errorf("failed to create new user: %w", err)
 			}
 		} else {
-			return nil, s.handleError(op, "failed to get user by telegramID", err, telegramID)
+			s.logger.Errorf("[%s] failed to get user by telegram id: %v", op, err)
+			return nil, fmt.Errorf("failed to get user by telegram id: %w", err)
 		}
 	}
 
 	accessToken, refreshToken, err := s.auth.GenerateTokens(&auth.GenerateTokenClaimsOptions{
-		UserId: user.ID,
-		Role:   user.Role,
+		UserId: user.GetID(),
+		Role:   user.GetRole(),
 	})
 	if err != nil {
-		return nil, s.handleError(op, "failed to generate tokens", err, telegramID)
+		s.logger.Errorf("[%s] failed to generate tokens: %v", op, err)
+		return nil, fmt.Errorf("failed to generate tokens: %w", err)
 	}
 
 	return &AuthResponse{
 		AccessToken:  accessToken,
 		RefreshToken: refreshToken,
+		IsAuthorized: user.IsAuthorized,
 	}, nil
+}
+
+func (s *userService) Authorize(ctx context.Context, telegramID int64, authDTO *dto.AuthorizeUserRequest) error {
+	const op = "userService.Authorize"
+
+	user, err := s.userStorage.GetByTelegramID(ctx, telegramID)
+	if err != nil {
+		if errors.Is(err, storage.ErrorUserNotFound) {
+			s.logger.Infof("[%s] user not found by telegram id: %d", op, telegramID)
+			return err
+		}
+
+		s.logger.Errorf("[%s] failed to get user by telegram id: %v", op, err)
+		return fmt.Errorf("failed to get user by telegram id: %w", err)
+	}
+
+	_, err = user.SetFirstName(authDTO.FirstName)
+	if err != nil {
+		s.logger.Errorf("[%s] failed to set first name: %v", op, err)
+		return fmt.Errorf("failed to set first name: %w", err)
+	}
+
+	_, err = user.SetLastName(authDTO.LastName)
+	if err != nil {
+		s.logger.Errorf("[%s] failed to set last name: %v", op, err)
+		return fmt.Errorf("failed to set last name: %w", err)
+	}
+
+	_, err = user.SetIsAuthorized(true)
+	if err != nil {
+		s.logger.Errorf("[%s] failed to set is authorized: %v", op, err)
+		return fmt.Errorf("failed to set is authorized: %w", err)
+	}
+
+	_, err = user.SetUpdatedAt(time.Now())
+	if err != nil {
+		s.logger.Errorf("[%s] failed to set updated at: %v", op, err)
+		return fmt.Errorf("failed to set updated at: %w", err)
+	}
+
+	if err := s.userStorage.Update(ctx, user); err != nil {
+		s.logger.Errorf("[%s] failed to update user: %v", op, err)
+		return fmt.Errorf("failed to update user: %w", err)
+	}
+
+	return nil
 }
 
 // RefreshTokens returns new access and refresh tokens

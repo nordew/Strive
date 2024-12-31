@@ -3,7 +3,7 @@ package service
 import (
 	"context"
 	"errors"
-	"fmt"
+	"github.com/nordew/Strive/internal/dto"
 	"github.com/nordew/Strive/internal/model"
 )
 
@@ -14,15 +14,12 @@ var (
 type AuthResponse struct {
 	AccessToken  string `json:"access_token"`
 	RefreshToken string `json:"refresh_token"`
-}
-
-func (s *userService) handleError(op string, msg string, err error, telegramID int64) error {
-	s.logger.Errorf("[%s]: %s: telegramID=%d, err=%v", op, msg, telegramID, err)
-	return fmt.Errorf("[%s]: %w", op, err)
+	IsAuthorized bool   `json:"is_authorized"`
 }
 
 type UserService interface {
-	Login(ctx context.Context, telegramID int64) (*AuthResponse, error)
+	Login(ctx context.Context, loginDTO *dto.LoginUserDTO) (*AuthResponse, error)
+	Authorize(ctx context.Context, telegramID int64, authDTO *dto.AuthorizeUserRequest) error
 
 	// Get supports id and telegramID
 	Get(ctx context.Context, id int) (*model.User, error)

@@ -7,8 +7,8 @@ import (
 )
 
 type Config struct {
-	PostgresURL string
-	HTTPPort    int
+	PostgresURL string `env:"POSTGRES_URL"`
+	HTTPPort    int    `env:"HTTP_PORT"`
 }
 
 var (

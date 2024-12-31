@@ -1,2 +1,4 @@
 .env
 .idea
+kill_8080.sh
+Makefile

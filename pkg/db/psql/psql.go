@@ -2,15 +2,27 @@ package psql
 
 import (
 	"context"
-	"github.com/jackc/pgx/v5"
+	"fmt"
+	"github.com/jackc/pgx/v5/pgxpool"
 )
 
-// Connect creates a new connection to the database
-func Connect(ctx context.Context, url string) (*pgx.Conn, error) {
-	conn, err := pgx.Connect(ctx, url)
+func Connect(ctx context.Context, url string) (*pgxpool.Pool, error) {
+	config, err := pgxpool.ParseConfig(url)
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("failed to parse database URL: %w", err)
 	}
 
-	return conn, nil
+	config.MaxConns = 1
+
+	pool, err := pgxpool.NewWithConfig(ctx, config)
+	if err != nil {
+		return nil, fmt.Errorf("failed to create connection pool: %w", err)
+	}
+
+	if err := pool.Ping(ctx); err != nil {
+		pool.Close()
+		return nil, fmt.Errorf("failed to ping database: %w", err)
+	}
+
+	return pool, nil
 }
