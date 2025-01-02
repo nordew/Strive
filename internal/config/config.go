@@ -9,6 +9,8 @@ import (
 type Config struct {
 	PostgresURL string `env:"POSTGRES_URL"`
 	HTTPPort    int    `env:"HTTP_PORT"`
+	BOTToken    string `env:"BOT_TOKEN"`
+	WebAppURL   string `env:"WEB_APP_URL"`
 }
 
 var (

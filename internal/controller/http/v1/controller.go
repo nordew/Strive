@@ -10,6 +10,7 @@ import (
 
 type Controller struct {
 	userService service.UserService
+	goalService service.GoalService
 	router      *gin.Engine
 }
 
@@ -34,6 +35,7 @@ func (c *Controller) Run(httpPort int) {
 }
 
 func (c *Controller) initRoutes() {
+	applyMiddlewares(c.router)
 	c.initAuthRoutes(c.router)
 }
 

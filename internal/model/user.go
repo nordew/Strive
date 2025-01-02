@@ -2,10 +2,12 @@ package model
 
 import (
 	"errors"
+	"github.com/google/uuid"
 	"strings"
 	"time"
 )
 
+// User TODO: Add subscription field
 type User struct {
 	ID           string    `json:"id"`
 	TelegramID   int64     `json:"telegram_id"`
@@ -26,8 +28,8 @@ func NewUser(
 	role int,
 	createdAt,
 	updatedAt time.Time) (*User, error) {
-	if id == "" {
-		return nil, errors.New("id cannot be empty")
+	if _, err := uuid.Parse(id); err != nil {
+		return nil, errors.New("id must be a valid UUID")
 	}
 
 	if telegramID <= 0 {
@@ -35,9 +37,7 @@ func NewUser(
 	}
 
 	//firstName = strings.TrimSpace(firstName)
-	//if firstName == "" {
-	//	return nil, errors.New("first_name cannot be empty")
-	//}
+	//if firstName == ""{
 	//
 	//lastName = strings.TrimSpace(lastName)
 	//
@@ -67,8 +67,8 @@ func NewUser(
 	return user, nil
 }
 func (u *User) SetID(id string) (*User, error) {
-	if id == "" {
-		return nil, errors.New("id cannot be empty")
+	if _, err := uuid.Parse(id); err != nil {
+		return nil, errors.New("id must be a valid UUID")
 	}
 
 	u.ID = id

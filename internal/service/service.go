@@ -17,12 +17,18 @@ type AuthResponse struct {
 	IsAuthorized bool   `json:"is_authorized"`
 }
 
-type UserService interface {
-	Login(ctx context.Context, loginDTO *dto.LoginUserDTO) (*AuthResponse, error)
-	Authorize(ctx context.Context, telegramID int64, authDTO *dto.AuthorizeUserRequest) error
+type (
+	UserService interface {
+		Login(ctx context.Context, loginDTO *dto.LoginUserDTO) (*AuthResponse, error)
+		Authorize(ctx context.Context, telegramID int64, authDTO *dto.AuthorizeUserRequest) error
 
-	// Get supports id and telegramID
-	Get(ctx context.Context, id int) (*model.User, error)
-	Update(ctx context.Context, user *model.User) error
-	Delete(ctx context.Context, id int) error
-}
+		// Get supports id and telegramID
+		Get(ctx context.Context, id int) (*model.User, error)
+		Update(ctx context.Context, user *model.User) error
+		Delete(ctx context.Context, id int) error
+	}
+
+	GoalService interface {
+		Create(ctx context.Context, createDTO *dto.CreateGoalDTO) error
+	}
+)

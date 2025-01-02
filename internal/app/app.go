@@ -3,25 +3,25 @@ package app
 import (
 	"context"
 	"fmt"
+	"log"
+	"net/http"
 	"os"
 	"os/signal"
 	"syscall"
 	"time"
 
 	"github.com/nordew/Strive/internal/config"
-	v1 "github.com/nordew/Strive/internal/controller/http/v1"
+	"github.com/nordew/Strive/internal/controller/http/v1"
 	"github.com/nordew/Strive/internal/service"
 	"github.com/nordew/Strive/internal/storage"
+	"github.com/nordew/Strive/internal/telegram"
 	"github.com/nordew/Strive/pkg/auth"
 	"github.com/nordew/Strive/pkg/db/psql"
 	"github.com/nordew/Strive/pkg/logger"
-	"log"
-	"net/http"
 )
 
 func MustRun() {
 	cfg := config.GetConfig()
-
 	ctx, stop := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGTERM)
 	defer stop()
 
@@ -32,7 +32,6 @@ func MustRun() {
 	defer pgPool.Close()
 
 	logger := logger.New()
-
 	userStorage := storage.NewUserStorage(pgPool)
 	jwtAuth := auth.NewAuth(logger)
 	userService := service.NewUserService(userStorage, jwtAuth, logger)
@@ -43,16 +42,26 @@ func MustRun() {
 		Handler: router.Init(),
 	}
 
+	// Start HTTP server in a separate goroutine
 	go func() {
-		log.Printf("HTTP server running on port %s", cfg.HTTPPort)
+		log.Printf("HTTP server running on port %d", cfg.HTTPPort)
 		if err := server.ListenAndServe(); err != nil && err != http.ErrServerClosed {
 			log.Fatalf("HTTP server failed: %v", err)
 		}
 	}()
 
-	<-ctx.Done()
-	log.Println("Shutting down gracefully...")
+	// Start the Telegram bot in a separate goroutine
+	go func() {
+		log.Println("Initializing telegram bot...")
+		if err := telegram.InitBot(cfg.BOTToken, cfg.WebAppURL); err != nil {
+			log.Fatalf("failed to init telegram bot: %v", err)
+		}
+	}()
 
+	// Await shutdown signal
+	<-ctx.Done()
+
+	log.Println("Shutting down gracefully...")
 	shutdownCtx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 	defer cancel()
 
