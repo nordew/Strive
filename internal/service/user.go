@@ -57,8 +57,8 @@ func (s *userService) Login(ctx context.Context, loginDTO *dto.LoginUserDTO) (*A
 				return nil, fmt.Errorf("failed to create new user: %w", err)
 			}
 		} else {
-			s.logger.Errorf("[%s] failed to get user by telegram id: %v", op, err)
-			return nil, fmt.Errorf("failed to get user by telegram id: %w", err)
+			s.logger.Errorf("[%s] failed to get user by bots id: %v", op, err)
+			return nil, fmt.Errorf("failed to get user by bots id: %w", err)
 		}
 	}
 
@@ -84,12 +84,12 @@ func (s *userService) Authorize(ctx context.Context, telegramID int64, authDTO *
 	user, err := s.userStorage.GetByTelegramID(ctx, telegramID)
 	if err != nil {
 		if errors.Is(err, storage.ErrorUserNotFound) {
-			s.logger.Infof("[%s] user not found by telegram id: %d", op, telegramID)
+			s.logger.Infof("[%s] user not found by bots id: %d", op, telegramID)
 			return err
 		}
 
-		s.logger.Errorf("[%s] failed to get user by telegram id: %v", op, err)
-		return fmt.Errorf("failed to get user by telegram id: %w", err)
+		s.logger.Errorf("[%s] failed to get user by bots id: %v", op, err)
+		return fmt.Errorf("failed to get user by bots id: %w", err)
 	}
 
 	_, err = user.SetFirstName(authDTO.FirstName)

@@ -10,11 +10,11 @@ import (
 	"syscall"
 	"time"
 
+	"github.com/nordew/Strive/internal/bots"
 	"github.com/nordew/Strive/internal/config"
 	"github.com/nordew/Strive/internal/controller/http/v1"
 	"github.com/nordew/Strive/internal/service"
 	"github.com/nordew/Strive/internal/storage"
-	"github.com/nordew/Strive/internal/telegram"
 	"github.com/nordew/Strive/pkg/auth"
 	"github.com/nordew/Strive/pkg/db/psql"
 	"github.com/nordew/Strive/pkg/logger"
@@ -52,9 +52,9 @@ func MustRun() {
 
 	// Start the Telegram bot in a separate goroutine
 	go func() {
-		log.Println("Initializing telegram bot...")
-		if err := telegram.InitBot(cfg.BOTToken, cfg.WebAppURL); err != nil {
-			log.Fatalf("failed to init telegram bot: %v", err)
+		log.Println("Initializing bots bot...")
+		if err := bots.InitBot(cfg.BOTToken, cfg.WebAppURL); err != nil {
+			log.Fatalf("failed to init bots bot: %v", err)
 		}
 	}()
 

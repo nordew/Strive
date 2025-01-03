@@ -1,4 +1,4 @@
-package telegram
+package bots
 
 import (
 	"gopkg.in/tucnak/telebot.v2"
@@ -6,13 +6,13 @@ import (
 	"time"
 )
 
-// Bot is exported to potentially allow other packages to use it
-var Bot *telebot.Bot
+type TelegramBot struct {
+	bot *telebot.Bot
+}
 
-// InitBot initializes the Telegram bot
-func InitBot(botToken, webAppURL string) error {
+func (tb *TelegramBot) Initialize(botToken, webAppURL string) error {
 	if botToken == "" || webAppURL == "" {
-		log.Fatal("TELEGRAM_BOT_TOKEN or REACT_APP_URL is not set in .env")
+		log.Fatal("TELEGRAM_BOT_TOKEN or WEB_APP_URL is not set")
 		return nil
 	}
 
@@ -22,24 +22,26 @@ func InitBot(botToken, webAppURL string) error {
 	})
 
 	if err != nil {
-		log.Fatalf("Failed to create bot: %v", err)
+		log.Fatalf("Failed to create Telegram bot: %v", err)
 		return err
 	}
 
-	bot.Handle("/start", func(m *telebot.Message) {
+	tb.bot = bot
+
+	tb.bot.Handle("/start", func(m *telebot.Message) {
 		replyMarkup := &telebot.ReplyMarkup{}
 		webAppBtn := replyMarkup.URL("Open Web App", webAppURL)
 		replyMarkup.Inline(replyMarkup.Row(webAppBtn))
 
-		_, err := bot.Send(m.Sender, "Welcome! Click below to open the web app.", replyMarkup)
+		_, err := tb.bot.Send(m.Sender, "Welcome! Click below to open the web app.", replyMarkup)
 		if err != nil {
 			log.Printf("Failed to send message: %v", err)
 		}
 	})
 
-	Bot = bot
-
-	go bot.Start()
-
 	return nil
+}
+
+func (tb *TelegramBot) Start() {
+	go tb.bot.Start()
 }
